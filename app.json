@@ -1,25 +1,60 @@
 {
   "expo": {
-    "name": "poold",
+    "name": "PoolD",
     "slug": "poold",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/logo/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/logo/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000719"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.poold.app",
+      "config": {
+        "googleMapsApiKey": "AIzaSyAnEzV8bjEuaHXn4qMhyD5TkLm_UOUhG8Y"
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "PoolD uses your location to find nearby rides and set pick-up points.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "PoolD uses your location to show your position during active rides."
+      }
     },
     "android": {
+      "package": "com.poold.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/logo/icon.png",
+        "backgroundColor": "#000719"
       },
-      "predictiveBackGestureEnabled": false
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAnEzV8bjEuaHXn4qMhyD5TkLm_UOUhG8Y"
+        }
+      }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/logo/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "PoolD uses your location to match you with nearby rides."
+        }
+      ]
+    ],
+    "scheme": "poold",
+    "extra": {
+      "googleMapsApiKey": "AIzaSyAnEzV8bjEuaHXn4qMhyD5TkLm_UOUhG8Y"
     }
   }
 }

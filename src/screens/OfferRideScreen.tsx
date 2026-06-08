@@ -6,15 +6,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../utils/theme';
-import { UAE_LOCATIONS, UAELocation } from '../utils/locations';
 import { estimateDrivingKm, suggestedContribution } from '../utils/distance';
 import { createRide, getPlatformConfig } from '../services/rides';
+import MapLocationPicker, { PickedLocation } from './MapLocationPicker';
 
 type Gender = 'any' | 'male' | 'female';
 
 export default function OfferRideScreen({ onBack, onPosted }: { onBack?: () => void; onPosted?: () => void }) {
-  const [origin, setOrigin] = useState<UAELocation | null>(null);
-  const [destination, setDestination] = useState<UAELocation | null>(null);
+  const [origin, setOrigin] = useState<PickedLocation | null>(null);
+  const [destination, setDestination] = useState<PickedLocation | null>(null);
   const [seats, setSeats] = useState(2);
   const [genderPref, setGenderPref] = useState<Gender>('any');
   const [notes, setNotes] = useState('');
@@ -32,7 +32,6 @@ export default function OfferRideScreen({ onBack, onPosted }: { onBack?: () => v
 
   // Location picker modal
   const [picker, setPicker] = useState<null | 'origin' | 'destination'>(null);
-  const [search, setSearch] = useState('');
 
   useEffect(() => {
     getPlatformConfig().then(({ data }) => {
@@ -54,25 +53,17 @@ export default function OfferRideScreen({ onBack, onPosted }: { onBack?: () => v
   // Reset contribution to suggested when inputs change
   useEffect(() => { setContribution(suggested); }, [suggested]);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return UAE_LOCATIONS;
-    return UAE_LOCATIONS.filter(l =>
-      l.name.toLowerCase().includes(q) || l.area.toLowerCase().includes(q)
-    );
-  }, [search]);
-
-  const canPost = origin && destination && origin.name !== destination.name && contribution >= 0;
+  const canPost = origin && destination && origin.label !== destination.label && contribution >= 0;
 
   const handlePost = async () => {
     if (!canPost) return;
     setPosting(true);
     setError('');
     const { error } = await createRide({
-      origin_label: `${origin!.name}, ${origin!.area}`,
+      origin_label: origin!.label,
       origin_lat: origin!.lat,
       origin_lng: origin!.lng,
-      destination_label: `${destination!.name}, ${destination!.area}`,
+      destination_label: destination!.label,
       destination_lat: destination!.lat,
       destination_lng: destination!.lng,
       distance_km: distanceKm,
@@ -97,6 +88,19 @@ export default function OfferRideScreen({ onBack, onPosted }: { onBack?: () => v
     if (d > new Date()) setDate(d);
   };
 
+  if (picker) {
+    return (
+      <MapLocationPicker
+        title={picker === 'origin' ? 'Pick-up location' : 'Drop-off location'}
+        onCancel={() => setPicker(null)}
+        onPick={(loc) => {
+          if (picker === 'origin') setOrigin(loc); else setDestination(loc);
+          setPicker(null);
+        }}
+      />
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.topBar}>
@@ -112,17 +116,17 @@ export default function OfferRideScreen({ onBack, onPosted }: { onBack?: () => v
         {/* Route */}
         <Text style={styles.label}>Route</Text>
         <View style={styles.routeCard}>
-          <TouchableOpacity style={styles.routeRow} onPress={() => { setPicker('origin'); setSearch(''); }}>
+          <TouchableOpacity style={styles.routeRow} onPress={() => setPicker('origin')}>
             <View style={styles.dotFrom} />
             <Text style={[styles.routeText, !origin && styles.placeholder]}>
-              {origin ? `${origin.name}, ${origin.area}` : 'Pick-up location'}
+              {origin ? origin.label : 'Pick-up location'}
             </Text>
           </TouchableOpacity>
           <View style={styles.routeDivider} />
-          <TouchableOpacity style={styles.routeRow} onPress={() => { setPicker('destination'); setSearch(''); }}>
+          <TouchableOpacity style={styles.routeRow} onPress={() => setPicker('destination')}>
             <View style={styles.dotTo} />
             <Text style={[styles.routeText, !destination && styles.placeholder]}>
-              {destination ? `${destination.name}, ${destination.area}` : 'Drop-off location'}
+              {destination ? destination.label : 'Drop-off location'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -231,52 +235,6 @@ export default function OfferRideScreen({ onBack, onPosted }: { onBack?: () => v
         <View style={{ height: 30 }} />
       </ScrollView>
 
-      {/* LOCATION PICKER MODAL */}
-      <Modal visible={picker !== null} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {picker === 'origin' ? 'Pick-up location' : 'Drop-off location'}
-              </Text>
-              <TouchableOpacity onPress={() => setPicker(null)} hitSlop={12}>
-                <Ionicons name="close" size={24} color={Colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.searchBox}>
-              <Ionicons name="search" size={18} color={Colors.textMuted} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search area or landmark"
-                placeholderTextColor={Colors.textMuted}
-                value={search}
-                onChangeText={setSearch}
-                autoFocus
-              />
-            </View>
-            <FlatList
-              data={filtered}
-              keyExtractor={(item) => item.name}
-              keyboardShouldPersistTaps="handled"
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.locItem}
-                  onPress={() => {
-                    if (picker === 'origin') setOrigin(item); else setDestination(item);
-                    setPicker(null);
-                  }}
-                >
-                  <Ionicons name="location-outline" size={20} color={Colors.teal} />
-                  <View>
-                    <Text style={styles.locName}>{item.name}</Text>
-                    <Text style={styles.locArea}>{item.area}</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
