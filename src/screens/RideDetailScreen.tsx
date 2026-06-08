@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../utils/theme';
 import { requestToJoin } from '../services/rides';
+import RouteMap from './RouteMap';
 
 export default function RideDetailScreen({
   ride, onBack, onRequested,
@@ -52,6 +53,19 @@ export default function RideDetailScreen({
           <Text style={styles.bigTime}>{time}</Text>
           <Text style={styles.bigDay}>{day}</Text>
         </View>
+
+        {/* Map with route */}
+        {ride.origin_lat && ride.destination_lat ? (
+          <View style={{ marginTop: 8, marginBottom: 16 }}>
+            <RouteMap
+              originLat={Number(ride.origin_lat)}
+              originLng={Number(ride.origin_lng)}
+              destLat={Number(ride.destination_lat)}
+              destLng={Number(ride.destination_lng)}
+              height={200}
+            />
+          </View>
+        ) : null}
 
         {/* Route */}
         <View style={styles.routeCard}>

@@ -7,6 +7,7 @@ import { Colors } from '../utils/theme';
 import HomeScreen from '../screens/HomeScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
 import MyRidesScreen from '../screens/MyRidesScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -14,10 +15,6 @@ const Tab = createBottomTabNavigator();
 function MessagesScreen() {
   return <PlaceholderScreen title="Messages" icon="chatbubble-outline"
     message="Chat with drivers and riders here. Coming in the next build." />;
-}
-function ProfileTabScreen() {
-  return <PlaceholderScreen title="Profile" icon="person-outline"
-    message="Your profile, ratings, and settings. Coming soon." />;
 }
 
 export default function MainTabs({
@@ -58,7 +55,7 @@ export default function MainTabs({
       </Tab.Screen>
       <Tab.Screen name="My Rides" component={MyRidesScreen} />
       <Tab.Screen name="Messages" component={MessagesScreen} />
-      <Tab.Screen name="Profile" component={ProfileTabScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }

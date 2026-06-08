@@ -89,3 +89,9 @@ export async function isProfileComplete() {
   const { data } = await getMyProfile();
   return !!(data && data.full_name && data.full_name.trim().length > 0);
 }
+
+/** Returns the signed-in user's email (from auth). */
+export async function getMyEmail(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.email ?? null;
+}

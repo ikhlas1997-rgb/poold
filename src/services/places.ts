@@ -103,3 +103,52 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
     return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
   }
 }
+
+/** Decodes a Google encoded polyline into [{latitude, longitude}] for MapView. */
+export function decodePolyline(encoded: string): { latitude: number; longitude: number }[] {
+  const points: { latitude: number; longitude: number }[] = [];
+  let index = 0, lat = 0, lng = 0;
+  while (index < encoded.length) {
+    let b, shift = 0, result = 0;
+    do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+    shift = 0; result = 0;
+    do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+    points.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
+  }
+  return points;
+}
+
+/** Gets the driving route polyline + distance/duration between two points. */
+export async function getRoute(
+  oLat: number, oLng: number, dLat: number, dLng: number
+): Promise<{ coords: { latitude: number; longitude: number }[]; distanceKm: number; durationMin: number } | null> {
+  if (!KEY) return null;
+  try {
+    const res = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': KEY,
+        'X-Goog-FieldMask': 'routes.polyline.encodedPolyline,routes.distanceMeters,routes.duration',
+      },
+      body: JSON.stringify({
+        origin: { location: { latLng: { latitude: oLat, longitude: oLng } } },
+        destination: { location: { latLng: { latitude: dLat, longitude: dLng } } },
+        travelMode: 'DRIVE',
+      }),
+    });
+    const data = await res.json();
+    const route = data.routes?.[0];
+    if (!route?.polyline?.encodedPolyline) return null;
+    return {
+      coords: decodePolyline(route.polyline.encodedPolyline),
+      distanceKm: Math.round((route.distanceMeters ?? 0) / 100) / 10,
+      durationMin: Math.round(parseInt(route.duration ?? '0') / 60),
+    };
+  } catch (e) {
+    console.warn('Route fetch failed', e);
+    return null;
+  }
+}
