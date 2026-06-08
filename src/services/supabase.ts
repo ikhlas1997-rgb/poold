@@ -42,3 +42,50 @@ export async function verifyEmailOtp(email: string, token: string) {
 export async function signOut() {
   return await supabase.auth.signOut();
 }
+
+// ── Profile helpers ──
+
+export type Profile = {
+  id: string;
+  full_name: string | null;
+  phone: string | null;
+  avatar_url: string | null;
+  role: 'rider' | 'driver' | 'both';
+  gender: 'male' | 'female' | 'prefer_not_to_say' | null;
+  city: string | null;
+  country: string;
+  is_verified: boolean;
+  rating: number;
+  total_rides: number;
+};
+
+/** Gets the current user's profile. */
+export async function getMyProfile() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { data: null, error: new Error('Not signed in') };
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+  return { data: data as Profile | null, error };
+}
+
+/** Updates the current user's profile. Uses upsert so it works
+ *  even if the profile row doesn't exist yet. */
+export async function updateMyProfile(updates: Partial<Profile>) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { data: null, error: new Error('Not signed in') };
+  const { data, error } = await supabase
+    .from('profiles')
+    .upsert({ id: user.id, ...updates }, { onConflict: 'id' })
+    .select()
+    .single();
+  return { data: data as Profile | null, error };
+}
+
+/** Checks if the user has completed their profile (has a name + role). */
+export async function isProfileComplete() {
+  const { data } = await getMyProfile();
+  return !!(data && data.full_name && data.full_name.trim().length > 0);
+}
