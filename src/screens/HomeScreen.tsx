@@ -18,9 +18,13 @@ const POPULAR_ROUTES = [
 export default function HomeScreen({
   onSearch,
   onOfferRide,
+  onOpenNotifications,
+  unreadCount = 0,
 }: {
   onSearch?: (from: string, to: string) => void;
   onOfferRide?: () => void;
+  onOpenNotifications?: () => void;
+  unreadCount?: number;
 }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [from, setFrom] = useState('');
@@ -43,7 +47,17 @@ export default function HomeScreen({
             <Text style={styles.greeting}>Hello, {firstName} 👋</Text>
             <Text style={styles.subGreeting}>Where are you heading today?</Text>
           </View>
-          <Image source={require('../../assets/logo/icon.png')} style={styles.logo} resizeMode="contain" />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <TouchableOpacity onPress={onOpenNotifications} hitSlop={10} style={styles.bell}>
+              <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
+              {unreadCount > 0 && (
+                <View style={styles.bellBadge}>
+                  <Text style={styles.bellBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <Image source={require('../../assets/logo/icon.png')} style={styles.logo} resizeMode="contain" />
+          </View>
         </View>
 
         {/* SEARCH CARD */}
@@ -152,6 +166,9 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 24, fontWeight: '800', color: Colors.textPrimary },
   subGreeting: { fontSize: 14, color: Colors.textSecondary, marginTop: 4 },
   logo: { width: 44, height: 44 },
+  bell: { position: 'relative' },
+  bellBadge: { position: 'absolute', top: -6, right: -6, backgroundColor: Colors.error, borderRadius: 10, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 1.5, borderColor: Colors.bgPrimary },
+  bellBadgeText: { fontSize: 10, fontWeight: '800', color: Colors.white },
 
   searchCard: {
     backgroundColor: Colors.bgCard, borderRadius: 20, padding: 18,

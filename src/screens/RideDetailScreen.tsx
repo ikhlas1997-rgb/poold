@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../utils/theme';
-import { requestToJoin } from '../services/rides';
+import { requestToJoin, getMyBookingForRide } from '../services/rides';
 import RouteMap from './RouteMap';
 
 export default function RideDetailScreen({
@@ -19,6 +19,15 @@ export default function RideDetailScreen({
   const [loading, setLoading] = useState(false);
   const [requested, setRequested] = useState(false);
   const [error, setError] = useState('');
+  const [existingStatus, setExistingStatus] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    getMyBookingForRide(ride.id).then(({ data }) => {
+      if (data) setExistingStatus(data.status);
+      setChecking(false);
+    });
+  }, [ride.id]);
 
   const dt = new Date(ride.departure_time);
   const time = dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -142,11 +151,12 @@ export default function RideDetailScreen({
 
       {/* Bottom action */}
       <View style={styles.footer}>
-        {requested ? (
+        {checking ? (
           <View style={styles.requestedBox}>
-            <Ionicons name="checkmark-circle" size={20} color={Colors.green} />
-            <Text style={styles.requestedText}>Request sent! The driver will confirm soon.</Text>
+            <ActivityIndicator color={Colors.teal} />
           </View>
+        ) : (requested || existingStatus) ? (
+          <RequestStatus status={requested ? 'requested' : (existingStatus as string)} />
         ) : (
           <TouchableOpacity style={styles.requestBtn} onPress={handleRequest} disabled={loading} activeOpacity={0.9}>
             {loading ? <ActivityIndicator color={Colors.bgPrimary} />
@@ -155,6 +165,23 @@ export default function RideDetailScreen({
         )}
       </View>
     </SafeAreaView>
+  );
+}
+
+function RequestStatus({ status }: { status: string }) {
+  const map: Record<string, { icon: any; color: string; text: string }> = {
+    requested: { icon: 'time-outline', color: '#FBBF24', text: 'Request sent — waiting for the driver to confirm' },
+    accepted:  { icon: 'checkmark-circle', color: '#34D98A', text: "You're in! The driver accepted your request" },
+    rejected:  { icon: 'close-circle', color: '#FF5A5A', text: 'This request was declined' },
+    cancelled: { icon: 'close-circle-outline', color: '#8CA0B8', text: 'This booking was cancelled' },
+    completed: { icon: 'checkmark-done-circle', color: '#34D98A', text: 'Trip completed' },
+  };
+  const s = map[status] || map.requested;
+  return (
+    <View style={styles.requestedBox}>
+      <Ionicons name={s.icon} size={20} color={s.color} />
+      <Text style={[styles.requestedText, { color: s.color }]}>{s.text}</Text>
+    </View>
   );
 }
 

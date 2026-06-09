@@ -43,6 +43,32 @@ export async function signOut() {
   return await supabase.auth.signOut();
 }
 
+// ── Password auth ──
+
+/** Sign up a new user with email + password. */
+export async function signUpWithPassword(email: string, password: string) {
+  const { data, error } = await supabase.auth.signUp({
+    email: email.trim(),
+    password,
+  });
+  return { data, error };
+}
+
+/** Sign in an existing user with email + password. */
+export async function signInWithPassword(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email.trim(),
+    password,
+  });
+  return { data, error };
+}
+
+/** Send a password reset email (uses OTP/recovery). */
+export async function sendPasswordReset(email: string) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+  return { error };
+}
+
 // ── Profile helpers ──
 
 export type Profile = {
